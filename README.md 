@@ -1,0 +1,9 @@
+# 全国旅游美食交通查询系统
+
+这是一个基于 Web 的旅游查询工具，支持通过 GitHub Actions 自动打包为 Android APK。
+
+## 如何使用
+1. 将本仓库 Clone 到本地。
+2. 修改 `index.html` 中的内容。
+3. 推送到 `main` 分支，GitHub Actions 会自动触发打包。
+4. 前往仓库的 **Actions** 页面，下载生成的 APK 文件。
