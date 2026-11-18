@@ -1,5 +1,6 @@
-name: Build APK with Pake
+name: Build Travel APK
 
+# 触发条件：推送到 main 分支或手动触发
 on:
   push:
     branches: [ main ]
@@ -10,26 +11,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. 拉取代码
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. 设置 Node.js 环境
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
-      - name: Install Pake
-        run: npm install -g pake-cli
-
-      - name: Build APK
+      # 3. 安装 Cordova 和 Android 构建工具
+      - name: Install Dependencies
         run: |
-          pake index.html \
-            --name "旅游查询助手" \
-            --platform android \
-            --output ./dist
+          npm install -g cordova
+          sudo apt-get update
+          sudo apt-get install -y gradle
 
-      - name: Upload APK
+      # 4. 创建 Cordova 项目并复制你的网页
+      - name: Create Project & Build
+        run: |
+          # 创建一个名为 TravelApp 的项目
+          cordova create TravelApp com.example.travelapp TravelApp
+          cd TravelApp
+          
+          # 添加安卓平台
+          cordova platform add android
+          
+          # 【关键步骤】用你的 index.html 覆盖 Cordova 的默认首页
+          # 假设你的 index.html 在仓库根目录
+          cp ../index.html www/index.html
+          
+          # 开始构建 APK
+          cordova build android
+
+      # 5. 上传生成的 APK 文件
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: travel-app-apk
-          path: ./dist/*.apk
+          name: My-Travel-App
+          # Cordova 生成的 APK 通常在这个路径
+          path: TravelApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
