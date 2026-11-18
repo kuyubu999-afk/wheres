@@ -30,36 +30,22 @@ jobs:
       # 4. 安装 Cordova 和 Android 平台
       - name: Install Cordova & Android Platform
         run: |
-          npm install -g cordova
-          # 创建一个临时项目来生成目录结构
-          cordova create temp-app com.example.travel TravelApp
+          npm install -g cordova@12.0.0
+          cordova create temp-app com.example.travel "旅游查询助手"
           cd temp-app
-          # 添加 Android 平台 (指定稳定版本 12.0.1)
+          rm -rf www/*
+          cp -r ../www/* www/  # 假设你的网页文件在仓库根目录的 www 文件夹下
           cordova platform add android@12.0.1
-          cd ..
 
-      # 5. 替换资源文件 (将你的 index.html 放入项目)
-      - name: Replace Web Assets
-        run: |
-          # 删除临时项目的默认网页
-          rm -rf temp-app/www/*
-          # 复制你的 index.html 进去
-          cp index.html temp-app/www/
-          # 如果有 css/js 文件夹，也可以在这里复制，例如：
-          # cp -r css temp-app/www/
-          # cp -r js temp-app/www/
-
-      # 6. 执行编译
+      # 5. 构建 APK
       - name: Build APK
         run: |
           cd temp-app
-          # 使用 --release 模式编译，生成未签名的 APK
-          cordova build android --release
+          cordova build android --release -- --gradleArg=--no-daemon
 
-      # 7. 上传产物
-      - name: Upload APK Artifact
+      # 6. 上传 APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Travel-App-APK
-          # 指向编译生成的 APK 路径
+          name: travel-app-apk
           path: temp-app/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
