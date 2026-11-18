@@ -1,0 +1,43 @@
+# 文件名：main.yml
+# 存放路径：.github/workflows/main.yml
+
+name: Build Travel APK
+
+# 触发条件：当代码推送到 main 分支，或者在 GitHub 网页上手动点击触发
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 拉取你的代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. 配置 Java 环境（打包安卓应用需要）
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 3. 使用 PikaPlus 工具将网页套壳打包成 APK
+      - name: Build APK using PikaPlus
+        uses: tiann/PikaPlus@main
+        with:
+          entry_file: index.html 
+          app_name: "旅游查询助手"
+          package_name: "com.travel.query"
+          version_code: 1
+          version_name: "1.0.0"
+
+      # 4. 打包完成后，上传生成的 APK 文件
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: travel-app-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
