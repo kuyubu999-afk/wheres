@@ -1,43 +1,65 @@
-# 文件名：main.yml
-# 存放路径：.github/workflows/main.yml
+name: Build APK (Stable)
 
-name: Build Travel APK
-
-# 触发条件：当代码推送到 main 分支，或者在 GitHub 网页上手动点击触发
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch: # 允许手动点击运行
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 拉取你的代码
-      - name: Checkout repository
+      # 1. 拉取代码
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. 配置 Java 环境（打包安卓应用需要）
+      # 2. 设置 Node.js (Cordova 需要)
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      # 3. 设置 Java 17 (Android 构建必须)
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3. 使用 PikaPlus 工具将网页套壳打包成 APK
-      - name: Build APK using PikaPlus
-        uses: tiann/PikaPlus@main
-        with:
-          entry_file: index.html 
-          app_name: "旅游查询助手"
-          package_name: "com.travel.query"
-          version_code: 1
-          version_name: "1.0.0"
+      # 4. 安装 Cordova 和 Android 平台
+      - name: Install Cordova & Android Platform
+        run: |
+          npm install -g cordova
+          # 创建一个临时项目来生成目录结构
+          cordova create temp-app com.example.travel TravelApp
+          cd temp-app
+          # 添加 Android 平台 (指定稳定版本 12.0.1)
+          cordova platform add android@12.0.1
+          cd ..
 
-      # 4. 打包完成后，上传生成的 APK 文件
-      - name: Upload APK
+      # 5. 替换资源文件 (将你的 index.html 放入项目)
+      - name: Replace Web Assets
+        run: |
+          # 删除临时项目的默认网页
+          rm -rf temp-app/www/*
+          # 复制你的 index.html 进去
+          cp index.html temp-app/www/
+          # 如果有 css/js 文件夹，也可以在这里复制，例如：
+          # cp -r css temp-app/www/
+          # cp -r js temp-app/www/
+
+      # 6. 执行编译
+      - name: Build APK
+        run: |
+          cd temp-app
+          # 使用 --release 模式编译，生成未签名的 APK
+          cordova build android --release
+
+      # 7. 上传产物
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: travel-app-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Travel-App-APK
+          # 指向编译生成的 APK 路径
+          path: temp-app/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
